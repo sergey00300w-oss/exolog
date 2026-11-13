@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Позволяет запускать сборку кнопкой вручную
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Загружаем ваш код из репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Устанавливаем Java 17
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Устанавливаем Flutter
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+
+      # 4. Генерируем недостающие файлы Android (манифест, сборщик gradle)
+      - name: Generate Android platform files
+        run: flutter create . --platforms=android --org com.exolog
+
+      # 5. Скачиваем библиотеки
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 6. Собираем сам APK-файл
+      - name: Build APK
+        run: flutter build apk --release
+
+      # 7. Выкладываем готовый файл для скачивания
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exolog-app
+          path: build/app/outputs/flutter-apk/app-release.apk
